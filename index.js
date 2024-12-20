@@ -35,7 +35,8 @@ const getHealthStatus = (req, res) => {
 const callBackendFunction = async (req, res) => {
     try {
         const token = await getAccessToken();
-        const response = await fetch('https://webappbackendi.azurewebsites.net/api/callout?name=Daniel', {
+        const name = "Daniel";
+        const response = await fetch(`https://webappbackendi.azurewebsites.net/api/callout?name=${encodeURIComponent(name)}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`
