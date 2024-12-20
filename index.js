@@ -1,28 +1,66 @@
+import express from 'express';
 import { DefaultAzureCredential } from '@azure/identity';
 import fetch from 'node-fetch';
+import ejs from 'ejs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-async function getAccessToken() {
+// Define __filename and __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware to parse JSON requests
+app.use(express.json());
+app.set('view engine', 'ejs'); // Set EJS as the view engine
+app.set('views', path.join(__dirname, 'views')); // Set views directory
+
+// Controller functions
+const getAccessToken = async () => {
     const credential = new DefaultAzureCredential();
     const tokenResponse = await credential.getToken('api://0c284651-7008-47ab-96ba-96fe1c5a7650/.default');
     return tokenResponse.token;
-}
+};
 
-async function callBackend() {
-    const token = await getAccessToken();
+const getHomePage = (req, res) => {
+    res.render('home', { title: 'Home Page' });
+};
 
-    const response = await fetch('https://webappbackendi.azurewebsites.net/api/callout?', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
+const getHealthStatus = (req, res) => {
+    res.status(200).send({ status: 'UP' });
+};
+
+const callBackendFunction = async (req, res) => {
+    try {
+        const token = await getAccessToken();
+        const response = await fetch('https://webappbackendi.azurewebsites.net/api/callout?name=Daniel', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        
+        console.log(response);
+        //const data = await response.json();
+        //res.status(200).json(data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Internal Server Error');
     }
+};
 
-    const data = await response.json();
-    console.log(data);
-}
+// Routes
+app.get('/', getHomePage); // Home route
+app.get('/health', getHealthStatus); // Health check route
+app.get('/api/function-call', callBackendFunction); // Function call route
 
-callBackend().catch(err => console.error(err));
+// Start the server
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
+});
