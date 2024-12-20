@@ -46,9 +46,9 @@ const callBackendFunction = async (req, res) => {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        console.log(response);
-        //const data = await response.json();
-        //res.status(200).json(data);
+        //console.log(response);
+        const data = await response.text();
+        res.status(200).json(data);
     } catch (err) {
         console.error(err);
         res.status(500).send('Internal Server Error');
